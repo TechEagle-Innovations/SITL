@@ -1,0 +1,80 @@
+from dronekit import connect, VehicleMode, LocationGlobalRelative, Command, LocationGlobal
+from pymavlink import mavutil
+import math as m
+import numpy as np
+import time
+
+
+class Drone:
+    def __init__(self, connection_string):
+        self.vehicle = connect(connection_string)
+
+    def arm_and_takeoff(self, altitude):
+        while not self.vehicle.is_armable:
+            print("waiting to be armable")
+            time.sleep(1)
+
+        print("Arming motors")
+        self.vehicle.mode = VehicleMode("GUIDED")
+        self.vehicle.armed = True
+
+        while not self.vehicle.armed:
+            time.sleep(1)
+
+        print("Taking Off")
+        self.vehicle.simple_takeoff(altitude)
+
+        while True:
+            v_alt = self.vehicle.location.global_relative_frame.alt
+            print(">> Altitude = %.1f m" % v_alt)
+            if v_alt >= altitude - 1.0:
+                print("Target altitude reached")
+                break
+            time.sleep(1)
+
+    def send_land_message(self, x, y, time_usec=0, target_num=0):
+
+        msg = self.vehicle.message_factory.landing_target_encode(
+            time_usec,  # time target data was processed, as close to sensor capture as possible
+            target_num,  # target num, not used
+            mavutil.mavlink.MAV_FRAME_BODY_NED,  # frame, not used
+            x,  # X-axis angular offset, in radians, for hexa (-x) 
+            y,  # Y-axis angular offset, in radians, for hexa (-y) 
+            self.vehicle.location.global_relative_frame.alt,  # distance, in meters
+            0,  # Target x-axis size, in radians
+            0,  # Target y-axis size, in radians
+            0,  # x	float	X Position of the landing target on MAV_FRAME
+            0,  # y	float	Y Position of the landing target on MAV_FRAME
+            0,  # z	float	Z Position of the landing target on MAV_FRAME
+            (1, 0, 0, 0),
+            # q	float[4]	Quaternion of landing target orientation (w, x, y, z order, zero-rotation is 1, 0, 0, 0)
+            2,  # type of landing target: 2 = Fiducial marker
+            1,  # position_valid boolean
+        )
+        self.vehicle.send_mavlink(msg)
+        self.vehicle.flush()
+
+    def send_msg_to_gcs(self, text_to_be_sent):
+        # MAV_SEVERITY: 0=EMERGENCY 1=ALERT 2=CRITICAL 3=ERROR, 4=WARNING, 5=NOTICE, 6=INFO, 7=DEBUG, 8=ENUM_END
+        # Defined here: https://mavlink.io/en/messages/common.html#MAV_SEVERITY
+        # MAV_SEVERITY = 3 will let the message be displayed on Mission Planner HUD, but 6 is ok for QGroundControl
+        if self.vehicle is not None:
+            text_msg = 'OA: ' + text_to_be_sent
+            status_msg = self.vehicle.message_factory.statustext_encode(
+                6,  # MAV_SEVERITY
+                text_msg.encode()  # max size is char[50]
+            )
+            self.vehicle.send_mavlink(status_msg)
+            self.vehicle.flush()
+            print("INFO: " + text_to_be_sent)
+        else:
+            print("INFO: Vehicle not connected. Cannot send text message to Ground Control Station (GCS)")
+
+    def send_auth_takeoff(self, status):
+        msg = self.vehicle.message_factory.auth_takeoff_encode(status = status)
+        self.vehicle.send_mavlink(msg)
+        self.vehicle.flush()
+
+
+    
+
