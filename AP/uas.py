@@ -32,7 +32,7 @@ class Drone:
                 break
             time.sleep(1)
 
-    def send_land_message(self, x, y, time_usec=0, target_num=0):
+    def send_land_message(self, x, y, distance, time_usec=0, target_num=0):
 
         msg = self.vehicle.message_factory.landing_target_encode(
             time_usec,  # time target data was processed, as close to sensor capture as possible
@@ -40,7 +40,7 @@ class Drone:
             mavutil.mavlink.MAV_FRAME_BODY_NED,  # frame, not used
             x,  # X-axis angular offset, in radians, for hexa (-x) 
             y,  # Y-axis angular offset, in radians, for hexa (-y) 
-            self.vehicle.location.global_relative_frame.alt,  # distance, in meters
+            distance,  # distance, in meters
             0,  # Target x-axis size, in radians
             0,  # Target y-axis size, in radians
             0,  # x	float	X Position of the landing target on MAV_FRAME
@@ -74,7 +74,52 @@ class Drone:
         msg = self.vehicle.message_factory.auth_takeoff_encode(status = status)
         self.vehicle.send_mavlink(msg)
         self.vehicle.flush()
-
-
+        
+    def send_ipls_sensor_status(self, status):
+        msg = self.vehicle.message_factory.land_sensor_status_encode(sensor_status = status)
+        self.vehicle.send_mavlink(msg)
+        self.vehicle.flush()
+        
+    def req_credentials(self, status, uas_id, password):
+        msg = self.vehicle.message_factory.req_uav_cred_encode(
+            status = status, 
+            uav_id = uas_id.encode('utf-8'),
+            password=password.encode('utf-8')
+        )
+        
+        self.vehicle.send_mavlink(msg)
+        self.vehicle.flush()
+        
+    def req_flight_status(self, P1):
+        msg = self.vehicle.message_factory.req_flt_status_encode(
+            P1 = P1, 
+        )
+        
+        self.vehicle.send_mavlink(msg)
+        self.vehicle.flush()
+        
+    def req_clearsky_info(self, P1):
+        msg = self.vehicle.message_factory.req_clearsky_encode(
+            request = P1, 
+        )
+        self.vehicle.send_mavlink(msg)
+        self.vehicle.flush()
+        
+    def preflight_calibration(self):
+        msg = self.vehicle.message_factory.command_long_encode(
+            0, 
+            0,  # target_system, target_component
+            mavutil.mavlink.MAV_CMD_PREFLIGHT_CALIBRATION,  # command
+            0,  # confirmation
+            0,  # param 1, 1: gyro calibration, 3: gyro temperature calibration
+            0,  # param 2, 1: magnetometer calibration
+            1,  # param 3, 1: ground pressure calibration
+            0,  # param 4, 1: radio RC calibration, 2: RC trim calibration
+            0,  # param 5, 1: accelerometer calibration, 2: board level calibration, 3: accelerometer temperature calibration, 4: simple accelerometer calibration
+            0,  # param 6, 2: airspeed calibration
+            0,  # param 7, 1: ESC calibration, 3: barometer temperature calibration
+        )
+        self.vehicle.send_mavlink(msg)
+        self.vehicle.flush()
     
 
