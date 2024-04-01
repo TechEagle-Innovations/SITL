@@ -74,6 +74,34 @@ class Drone:
         msg = self.vehicle.message_factory.auth_takeoff_encode(status = status)
         self.vehicle.send_mavlink(msg)
         self.vehicle.flush()
+        
+    def req_credentials(self, status, uas_id, password):
+        msg = self.vehicle.message_factory.req_uav_cred_encode(
+            status = status, 
+            uav_id = uas_id.encode('utf-8'),
+            password=password.encode('utf-8')
+        )
+        
+        self.vehicle.send_mavlink(msg)
+        self.vehicle.flush()
+        
+    def preflight_calibration(self):
+        msg = self.vehicle.message_factory.command_long_encode(
+            0, 
+            0,  # target_system, target_component
+            mavutil.mavlink.MAV_CMD_PREFLIGHT_CALIBRATION,  # command
+            0,  # confirmation
+            0,  # param 1, 1: gyro calibration, 3: gyro temperature calibration
+            0,  # param 2, 1: magnetometer calibration
+            1,  # param 3, 1: ground pressure calibration
+            0,  # param 4, 1: radio RC calibration, 2: RC trim calibration
+            0,  # param 5, 1: accelerometer calibration, 2: board level calibration, 3: accelerometer temperature calibration, 4: simple accelerometer calibration
+            0,  # param 6, 2: airspeed calibration
+            0,  # param 7, 1: ESC calibration, 3: barometer temperature calibration
+        )
+        self.vehicle.send_mavlink(msg)
+        self.vehicle.flush()
+
 
 
     

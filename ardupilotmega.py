@@ -16,7 +16,7 @@ import time
 from builtins import object, range
 
 WIRE_PROTOCOL_VERSION = "2.0"
-DIALECT = "pymavlink_v10"
+DIALECT = "mavlink_new"
 
 PROTOCOL_MARKER_V1 = 0xFE
 PROTOCOL_MARKER_V2 = 0xFD
@@ -6653,7 +6653,10 @@ MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS = 12918
 MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK = 12915
 MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM_UPDATE = 12919
 MAVLINK_MSG_ID_HYGROMETER_SENSOR = 12920
-MAVLINK_MSG_ID_AUTH_TAKEOFF = 12921
+MAVLINK_MSG_ID_LAND_SENSOR_STATUS = 12921
+MAVLINK_MSG_ID_AUTH_TAKEOFF = 12922
+MAVLINK_MSG_ID_UAV_CRED = 12923
+MAVLINK_MSG_ID_REQ_UAV_CRED = 12924
 MAVLINK_MSG_ID_MISSION_CHECKSUM = 53
 MAVLINK_MSG_ID_ICAROUS_HEARTBEAT = 42000
 MAVLINK_MSG_ID_ICAROUS_KINEMATIC_BANDS = 42001
@@ -19684,9 +19687,47 @@ class MAVLink_hygrometer_sensor_message(MAVLink_message):
 setattr(MAVLink_hygrometer_sensor_message, "name", mavlink_msg_deprecated_name_property())
 
 
+class MAVLink_land_sensor_status_message(MAVLink_message):
+    """
+    used to send information about landing sensor.
+    """
+
+    id = MAVLINK_MSG_ID_LAND_SENSOR_STATUS
+    msgname = "LAND_SENSOR_STATUS"
+    fieldnames = ["sensor_status"]
+    ordered_fieldnames = ["sensor_status"]
+    fieldtypes = ["uint8_t"]
+    fielddisplays_by_name = {}
+    fieldenums_by_name = {}
+    fieldunits_by_name = {}
+    native_format = bytearray("<B", "ascii")
+    orders = [0]
+    lengths = [1]
+    array_lengths = [0]
+    crc_extra = 203
+    unpacker = struct.Struct("<B")
+    instance_field = None
+    instance_offset = -1
+
+    def __init__(self, sensor_status):
+        MAVLink_message.__init__(self, MAVLink_land_sensor_status_message.id, MAVLink_land_sensor_status_message.msgname)
+        self._fieldnames = MAVLink_land_sensor_status_message.fieldnames
+        self._instance_field = MAVLink_land_sensor_status_message.instance_field
+        self._instance_offset = MAVLink_land_sensor_status_message.instance_offset
+        self.sensor_status = sensor_status
+
+    def pack(self, mav, force_mavlink1=False):
+        return self._pack(mav, self.crc_extra, self.unpacker.pack(self.sensor_status), force_mavlink1=force_mavlink1)
+
+
+# Define name on the class for backwards compatibility (it is now msgname).
+# Done with setattr to hide the class variable from mypy.
+setattr(MAVLink_land_sensor_status_message, "name", mavlink_msg_deprecated_name_property())
+
+
 class MAVLink_auth_takeoff_message(MAVLink_message):
     """
-    Used to allow start mission on authenticate
+    used to allow start mission on auth.
     """
 
     id = MAVLINK_MSG_ID_AUTH_TAKEOFF
@@ -19720,6 +19761,85 @@ class MAVLink_auth_takeoff_message(MAVLink_message):
 # Define name on the class for backwards compatibility (it is now msgname).
 # Done with setattr to hide the class variable from mypy.
 setattr(MAVLink_auth_takeoff_message, "name", mavlink_msg_deprecated_name_property())
+
+
+class MAVLink_uav_cred_message(MAVLink_message):
+    """
+    send credentials to gcs auth
+    """
+
+    id = MAVLINK_MSG_ID_UAV_CRED
+    msgname = "UAV_CRED"
+    fieldnames = ["uav_id", "password"]
+    ordered_fieldnames = ["uav_id", "password"]
+    fieldtypes = ["char", "char"]
+    fielddisplays_by_name = {}
+    fieldenums_by_name = {}
+    fieldunits_by_name = {}
+    native_format = bytearray("<cc", "ascii")
+    orders = [0, 1]
+    lengths = [1, 1]
+    array_lengths = [40, 40]
+    crc_extra = 19
+    unpacker = struct.Struct("<40s40s")
+    instance_field = None
+    instance_offset = -1
+
+    def __init__(self, uav_id, password):
+        MAVLink_message.__init__(self, MAVLink_uav_cred_message.id, MAVLink_uav_cred_message.msgname)
+        self._fieldnames = MAVLink_uav_cred_message.fieldnames
+        self._instance_field = MAVLink_uav_cred_message.instance_field
+        self._instance_offset = MAVLink_uav_cred_message.instance_offset
+        self.uav_id = uav_id
+        self.password = password
+
+    def pack(self, mav, force_mavlink1=False):
+        return self._pack(mav, self.crc_extra, self.unpacker.pack(self.uav_id, self.password), force_mavlink1=force_mavlink1)
+
+
+# Define name on the class for backwards compatibility (it is now msgname).
+# Done with setattr to hide the class variable from mypy.
+setattr(MAVLink_uav_cred_message, "name", mavlink_msg_deprecated_name_property())
+
+
+class MAVLink_req_uav_cred_message(MAVLink_message):
+    """
+    test
+    """
+
+    id = MAVLINK_MSG_ID_REQ_UAV_CRED
+    msgname = "REQ_UAV_CRED"
+    fieldnames = ["status", "uav_id", "password"]
+    ordered_fieldnames = ["status", "uav_id", "password"]
+    fieldtypes = ["uint8_t", "char", "char"]
+    fielddisplays_by_name = {}
+    fieldenums_by_name = {}
+    fieldunits_by_name = {}
+    native_format = bytearray("<Bcc", "ascii")
+    orders = [0, 1, 2]
+    lengths = [1, 1, 1]
+    array_lengths = [0, 40, 40]
+    crc_extra = 220
+    unpacker = struct.Struct("<B40s40s")
+    instance_field = None
+    instance_offset = -1
+
+    def __init__(self, status, uav_id, password):
+        MAVLink_message.__init__(self, MAVLink_req_uav_cred_message.id, MAVLink_req_uav_cred_message.msgname)
+        self._fieldnames = MAVLink_req_uav_cred_message.fieldnames
+        self._instance_field = MAVLink_req_uav_cred_message.instance_field
+        self._instance_offset = MAVLink_req_uav_cred_message.instance_offset
+        self.status = status
+        self.uav_id = uav_id
+        self.password = password
+
+    def pack(self, mav, force_mavlink1=False):
+        return self._pack(mav, self.crc_extra, self.unpacker.pack(self.status, self.uav_id, self.password), force_mavlink1=force_mavlink1)
+
+
+# Define name on the class for backwards compatibility (it is now msgname).
+# Done with setattr to hide the class variable from mypy.
+setattr(MAVLink_req_uav_cred_message, "name", mavlink_msg_deprecated_name_property())
 
 
 class MAVLink_mission_checksum_message(MAVLink_message):
@@ -21755,7 +21875,10 @@ mavlink_map = {
     MAVLINK_MSG_ID_OPEN_DRONE_ID_MESSAGE_PACK: MAVLink_open_drone_id_message_pack_message,
     MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM_UPDATE: MAVLink_open_drone_id_system_update_message,
     MAVLINK_MSG_ID_HYGROMETER_SENSOR: MAVLink_hygrometer_sensor_message,
+    MAVLINK_MSG_ID_LAND_SENSOR_STATUS: MAVLink_land_sensor_status_message,
     MAVLINK_MSG_ID_AUTH_TAKEOFF: MAVLink_auth_takeoff_message,
+    MAVLINK_MSG_ID_UAV_CRED: MAVLink_uav_cred_message,
+    MAVLINK_MSG_ID_REQ_UAV_CRED: MAVLink_req_uav_cred_message,
     MAVLINK_MSG_ID_MISSION_CHECKSUM: MAVLink_mission_checksum_message,
     MAVLINK_MSG_ID_ICAROUS_HEARTBEAT: MAVLink_icarous_heartbeat_message,
     MAVLINK_MSG_ID_ICAROUS_KINEMATIC_BANDS: MAVLink_icarous_kinematic_bands_message,
@@ -31933,9 +32056,27 @@ class MAVLink(object):
         """
         return self.send(self.hygrometer_sensor_encode(id, temperature, humidity), force_mavlink1=force_mavlink1)
 
+    def land_sensor_status_encode(self, sensor_status):
+        """
+        used to send information about landing sensor.
+
+        sensor_status             : IPLS sensor status (type:uint8_t)
+
+        """
+        return MAVLink_land_sensor_status_message(sensor_status)
+
+    def land_sensor_status_send(self, sensor_status, force_mavlink1=False):
+        """
+        used to send information about landing sensor.
+
+        sensor_status             : IPLS sensor status (type:uint8_t)
+
+        """
+        return self.send(self.land_sensor_status_encode(sensor_status), force_mavlink1=force_mavlink1)
+
     def auth_takeoff_encode(self, status):
         """
-        Used to allow start mission on authenticate
+        used to allow start mission on auth.
 
         status                    :  (type:uint8_t)
 
@@ -31944,12 +32085,54 @@ class MAVLink(object):
 
     def auth_takeoff_send(self, status, force_mavlink1=False):
         """
-        Used to allow start mission on authenticate
+        used to allow start mission on auth.
 
         status                    :  (type:uint8_t)
 
         """
         return self.send(self.auth_takeoff_encode(status), force_mavlink1=force_mavlink1)
+
+    def uav_cred_encode(self, uav_id, password):
+        """
+        send credentials to gcs auth
+
+        uav_id                    :  (type:char)
+        password                  :  (type:char)
+
+        """
+        return MAVLink_uav_cred_message(uav_id, password)
+
+    def uav_cred_send(self, uav_id, password, force_mavlink1=False):
+        """
+        send credentials to gcs auth
+
+        uav_id                    :  (type:char)
+        password                  :  (type:char)
+
+        """
+        return self.send(self.uav_cred_encode(uav_id, password), force_mavlink1=force_mavlink1)
+
+    def req_uav_cred_encode(self, status, uav_id, password):
+        """
+        test
+
+        status                    : 1 for write / 0 for read (type:uint8_t)
+        uav_id                    :  (type:char)
+        password                  :  (type:char)
+
+        """
+        return MAVLink_req_uav_cred_message(status, uav_id, password)
+
+    def req_uav_cred_send(self, status, uav_id, password, force_mavlink1=False):
+        """
+        test
+
+        status                    : 1 for write / 0 for read (type:uint8_t)
+        uav_id                    :  (type:char)
+        password                  :  (type:char)
+
+        """
+        return self.send(self.req_uav_cred_encode(status, uav_id, password), force_mavlink1=force_mavlink1)
 
     def mission_checksum_encode(self, mission_type, checksum):
         """
